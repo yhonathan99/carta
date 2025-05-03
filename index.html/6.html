@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Para Ti...</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: #0b1522;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .heart {
+      height: 70px;
+      width: 70px;
+      background: #f20044;
+      position: relative;
+      transform: rotate(-45deg);
+      box-shadow: -10px 10px 90px #f20044;
+      animation: latido 0.8s infinite;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .heart::before,
+    .heart::after {
+      content: '';
+      position: absolute;
+      height: 70px;
+      width: 70px;
+      background: #f20044;
+      border-radius: 50%;
+    }
+
+    .heart::before {
+      top: -35px;
+      left: 0;
+    }
+
+    .heart::after {
+      left: 35px;
+      top: 0;
+    }
+
+    @keyframes latido {
+      0%, 100% {
+        transform: rotate(-45deg) scale(1);
+      }
+      50% {
+        transform: rotate(-45deg) scale(1.3);
+      }
+    }
+
+    .message {
+      max-width: 90%;
+      margin-top: 30px;
+      font-size: 1.1rem;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+    }
+
+    .final {
+      white-space: pre-line;
+      margin-top: 40px;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      color: #ccc;
+      z-index: 2;
+    }
+
+    #secretMessage {
+      display: none;
+      position: absolute;
+      bottom: 20px;
+      font-size: 1.2rem;
+      color: gold;
+      z-index: 3;
+      text-shadow: 0 0 10px #fff, 0 0 20px #f0f, 0 0 30px #0ff;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="heart" onclick="mostrarFrase()"></div>
+  <div class="message" id="message"></div>
+  <div class="final" id="finalMessage" style="display:none;"></div>
+  <audio id="song" src="Bryant Myers - Como Panas (Audio Oficial).mp3" style="display:none;"></audio>
+  <div id="secretMessage"></div>
+  <canvas id="effects"></canvas>
+
+  <script>
+    const frases = [
+      "No sé cómo pasó, pero tu sonrisa se me quedó pegada al alma.",
+      "A veces no sé qué decirte... pero lo que siento vibra más que mi voz.",
+      "Cada latido de este corazón tiene tu nombre.",
+      "Si supieras cuánto inspiras esto que ves, entenderías lo especial que eres.",
+      "No es una página web… es un pedacito de mí, latiendo por ti."
+    ];
+
+    const mensajeFinal = `Me ilusioné cuando dijiste que querías intentar las cosas conmigo. 
+Creí que tal vez podíamos tener una segunda oportunidad.
+
+Te busqué porque sentía que había algo bueno entre nosotros, algo que valía la pena. 
+No me arrepiento de haberte buscado ni de haberte dado detalles.
+
+Pensé que podíamos volver a empezar, pero ahora veo que tal vez solo fui yo con mis pensamientos raros. 
+Voy a intentar dejar de verte con ojos de amor y empezar a verte como una amiga.
+
+Gracias por los buenos momentos.`;
+
+    let index = 0;
+    const heart = document.querySelector('.heart');
+    const messageDiv = document.getElementById('message');
+    const finalMessageDiv = document.getElementById('finalMessage');
+    const secretMessage = document.getElementById('secretMessage');
+    const audio = document.getElementById('song');
+    const canvas = document.getElementById('effects');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    let fireworks = [];
+    let starsInterval;
+
+    function mostrarFrase() {
+      if (index < frases.length) {
+        messageDiv.style.opacity = 0;
+        setTimeout(() => {
+          messageDiv.textContent = frases[index];
+          messageDiv.style.opacity = 1;
+
+          // Aumentar velocidad del latido
+          const duracion = 0.8 - (index * 0.1);
+          heart.style.animationDuration = `${Math.max(duracion, 0.3)}s`;
+
+          if (navigator.vibrate) {
+            navigator.vibrate([100 + index * 50, 50]);
+          }
+
+          index++;
+        }, 500);
+      } else {
+        messageDiv.style.display = 'none';
+        finalMessageDiv.style.display = 'block';
+        finalMessageDiv.textContent = mensajeFinal;
+
+        if (navigator.vibrate) {
+          navigator.vibrate([300, 100, 300]);
+        }
+
+        // Pequeña animación de "explotar" el corazón al final
+        heart.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
+        heart.style.transform = 'scale(2)';
+        heart.style.opacity = '0';
+        setTimeout(() => {
+          heart.style.display = 'none';
+        }, 500);
+
+        audio.style.display = 'none';
+        audio.play();
+
+        iniciarEstrellas();
+
+        // Lanzar fuegos artificiales exactamente a los 3:14 minutos (194 segundos)
+        const fuegoDelay = 194 * 1000;
+        setTimeout(() => {
+          iniciarFuegosArtificiales();
+        }, fuegoDelay);
+
+        audio.addEventListener('ended', () => {
+          secretMessage.textContent = 'No le muestres esto a nadie es muy cursi y yo soy ganster, gana el año y dedicamelo ami 🥺🫂';
+          secretMessage.style.display = 'block';
+          clearInterval(starsInterval);
+        });
+      }
+    }
+
+    // --------- Estrellas (simples) ---------
+    function iniciarEstrellas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      starsInterval = setInterval(() => {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.5,
+          alpha: Math.random()
+        });
+      }, 100);
+
+      animate();
+    }
+
+    function drawStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach((star, i) => {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+        ctx.fill();
+      });
+    }
+
+    // --------- Fuegos Artificiales ---------
+    function iniciarFuegosArtificiales() {
+      setInterval(() => {
+        fireworks.push(new Firework());
+      }, 300);
+    }
+
+    class Firework {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = canvas.height;
+        this.targetY = Math.random() * canvas.height / 2;
+        this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+        this.radius = 2;
+        this.exploded = false;
+        this.particles = [];
+      }
+
+      update() {
+        if (!this.exploded) {
+          this.y -= 5;
+          if (this.y <= this.targetY) {
+            this.exploded = true;
+            for (let i = 0; i < 40; i++) {
+              this.particles.push(new Particle(this.x, this.y, this.color));
+            }
+          }
+        } else {
+          this.particles.forEach(p => p.update());
+        }
+      }
+
+      draw() {
+        if (!this.exploded) {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        } else {
+          this.particles.forEach(p => p.draw());
+        }
+      }
+    }
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.radius = 2;
+        this.speedX = (Math.random() - 0.5) * 10;
+        this.speedY = (Math.random() - 0.5) * 10;
+        this.life = 100;
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.life -= 2;
+      }
+
+      draw() {
+        if (this.life > 0) {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        }
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawStars();
+      fireworks.forEach((fw, i) => {
+        fw.update();
+        fw.draw();
+        if (fw.exploded && fw.particles.every(p => p.life <= 0)) {
+          fireworks.splice(i, 1);
+        }
+      });
+      requestAnimationFrame(animate);
+    }
+  </script>
+
+</body>
+</html>
